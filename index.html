@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SMART TRAFFIC SIGNAL CONTROLLER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+         :root {
+            --bg1: #0f1724;
+            --bg2: #0b1221;
+            --card: #0f1728;
+            --accent: #63f5b0;
+            --accent2: #6ec0ff;
+            --muted: #b8c2d3;
+        }
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif
+        }
+        
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            color: #e6eef8
+        }
+        
+        header {
+            padding: 22px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+        
+        h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--accent2)
+        }
+        
+        .sub {
+            color: var(--muted);
+            font-size: 13px
+        }
+        
+        main {
+            padding: 20px 36px;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 24px
+        }
+        
+        .board {
+            background: linear-gradient(180deg, #09121a22, #07111a66);
+            border-radius: 12px;
+            padding: 18px;
+            min-height: 520px;
+        }
+        
+        .lanes {
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            align-items: flex-end;
+            height: 360px
+        }
+        
+        .lane {
+            width: 150px;
+            height: 320px;
+            background: #0b2330;
+            border-radius: 12px;
+            padding: 12px;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+        
+        .lane.active {
+            box-shadow: 0 12px 40px rgba(99, 245, 176, 0.12), 0 0 0 4px rgba(99, 245, 176, 0.08)
+        }
+        
+        .lane .title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--accent)
+        }
+        
+        .queue {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 14px;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 6px;
+            align-items: center
+        }
+        
+        .car {
+            width: 42px;
+            height: 22px;
+            border-radius: 6px;
+            background: #ff7b7b;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+        }
+        
+        .car.bus {
+            width: 60px;
+            height: 26px;
+            border-radius: 8px;
+            background: #ffd27a
+        }
+        
+        .statbar {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--muted)
+        }
+        
+        .metrics {
+            background: linear-gradient(180deg, #07111a66, #07111a33);
+            padding: 16px;
+            border-radius: 12px
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 4px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.03)
+        }
+        
+        .gantt {
+            height: 70px;
+            margin-top: 12px;
+            background: #061018;
+            border-radius: 8px;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            overflow: hidden
+        }
+        
+        .gcell {
+            width: 6px;
+            height: 54px;
+            border-radius: 2px;
+            opacity: 0.95
+        }
+        
+        footer.controls {
+            padding: 12px 36px;
+            color: var(--muted);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between
+        }
+        
+        .btn {
+            background: linear-gradient(90deg, #1b2b3a, #12202a);
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--muted)
+        }
+        
+        .btn.primary {
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            color: #07111a;
+            font-weight: 600
+        }
+        
+        .small {
+            font-size: 12px
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div>
+            <h1>SMART TRAFFIC SIGNAL CONTROLLER</h1>
+            <div class="sub">OS-scheduling driven intersection — RR / Static / Dynamic (aging) / Hybrid</div>
+        </div>
+        <div class="sub small">Tick: <span id="tick">0</span> &nbsp; | &nbsp; Scheduler: <strong id="schedLabel">dynamic</strong></div>
+    </header>
+
+    <main>
+        <section class="board">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:600">Intersection View</div>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <button class="btn" onclick="setScheduler('rr')">RR</button>
+                    <button class="btn" onclick="setScheduler('static')">Static</button>
+                    <button class="btn" onclick="setScheduler('dynamic')">Dynamic</button>
+                    <button class="btn" onclick="setScheduler('hybrid')">Hybrid</button>
+                    <button class="btn primary" onclick="resetMetrics()">Reset</button>
+                </div>
+            </div>
+
+            <div class="lanes" id="lanes">
+                <!-- lanes inserted by JS -->
+            </div>
+
+            <div style="display:flex;gap:18px;margin-top:14px">
+                <div style="flex:1">
+                    <div class="metrics" id="metrics">
+                        <!-- metrics -->
+                    </div>
+                </div>
+                <div style="width:320px">
+                    <div style="font-weight:600;margin-bottom:8px">Gantt - recent phases</div>
+                    <div class="gantt" id="gantt"></div>
+                </div>
+            </div>
+        </section>
+
+        <aside style="padding:12px">
+            <div style="background:linear-gradient(180deg,#07111a,#07111a22);padding:14px;border-radius:12px">
+                <div style="font-weight:700;margin-bottom:8px">Controls & Info</div>
+                <div class="small" style="color:var(--muted);margin-bottom:10px">
+                    Frontend reads snapshots produced by the C backend at <code>../data/traffic_data.json</code>.
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                    <div class="btn" onclick="downloadJSON()">Download snapshot</div>
+                    <div class="btn" onclick="openBackendHelp()">How to run backend</div>
+                </div>
+
+                <div style="margin-top:12px">
+                    <div style="font-weight:600;margin-bottom:6px">Legend</div>
+                    <div class="small" style="color:var(--muted)">
+                        <div>Green border = current green phase</div>
+                        <div>Car blocks = vehicles in queue (count limited)</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="controls">
+        <div class="small">Pro tip: run backend with <code>./traffic_controller dynamic 400</code> to change scheduler & tick</div>
+        <div><span class="small">Author: PBL simulator</span></div>
+    </footer>
+
+    <script>
+        const lanesDiv = document.getElementById('lanes');
+        const tickSpan = document.getElementById('tick');
+        const schedLabel = document.getElementById('schedLabel');
+        const ganttDiv = document.getElementById('gantt');
+        const metricsDiv = document.getElementById('metrics');
+
+        let lastSnapshot = null;
+        let currentScheduler = 'dynamic';
+
+        function createLane(i) {
+            const l = document.createElement('div');
+            l.className = 'lane';
+            l.id = 'lane' + i;
+            l.innerHTML = `<div class="title">Approach ${i+1}</div>
+                 <div class="sub small statbar" id="info${i}">Q:0 | P: -</div>
+                 <div class="queue" id="queue${i}"></div>`;
+            return l;
+        }
+
+        /* create 4 lanes */
+        for (let i = 0; i < 4; i++) lanesDiv.appendChild(createLane(i));
+
+        async function fetchSnapshot() {
+            try {
+                const res = await fetch('../data/traffic_data.json?nocache=' + Math.random());
+                if (!res.ok) throw new Error('no snapshot');
+                const json = await res.json();
+                lastSnapshot = json;
+                renderSnapshot(json);
+            } catch (e) {
+                // offline or file not present
+                // console.log('waiting for backend...');
+            }
+        }
+
+        function renderSnapshot(s) {
+            tickSpan.textContent = s.tick;
+            schedLabel.textContent = currentScheduler;
+            // Approaches
+            s.approaches.forEach(a => {
+                const lane = document.getElementById('lane' + a.id);
+                const queueDiv = document.getElementById('queue' + a.id);
+                const info = document.getElementById('info' + a.id);
+                // active highlight
+                if (s.current_green === a.id) lane.classList.add('active');
+                else lane.classList.remove('active');
+                // fill queue with car elements (cap visuals to 10)
+                queueDiv.innerHTML = '';
+                const count = Math.min(12, a.queue_len);
+                for (let i = 0; i < count; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'car ' + ((i % 7 === 0) ? 'bus' : '');
+                    el.style.transform = 'translateY(' + (-(i * 4)) + 'px)';
+                    queueDiv.appendChild(el);
+                }
+                info.textContent = `Q:${a.queue_len} | P:${a.static_prio} | Age:${a.age}`;
+            });
+            // metrics
+            let total_served = 0,
+                total_wait = 0,
+                qtotal = 0,
+                total_starv = 0;
+            s.approaches.forEach(a => {
+                total_served += a.served;
+                total_wait += a.dynamic_prio;
+                qtotal += a.queue_len;
+                total_starv += a.starvation || 0;
+            });
+            metricsDiv.innerHTML = `
+    <div class="metric"><div>Throughput</div><div>${total_served}</div></div>
+    <div class="metric"><div>Queue total</div><div>${qtotal}</div></div>
+    <div class="metric"><div>Avg dyn-prio (proxy)</div><div>${(total_wait/4).toFixed(2)}</div></div>
+    <div class="metric"><div>Starvation events</div><div>${total_starv}</div></div>
+  `;
+            // gantt
+            ganttDiv.innerHTML = '';
+            if (s.gantt && s.gantt.length > 0) {
+                const colors = ['#63f5b0', '#6ec0ff', '#ffd27a', '#ff9aa2'];
+                s.gantt.forEach(v => {
+                    const c = document.createElement('div');
+                    c.className = 'gcell';
+                    c.style.background = (v === -1 ? '#081018' : colors[(v % colors.length)]);
+                    ganttDiv.appendChild(c);
+                });
+            }
+        }
+
+        /* Buttons (visual only) - sends scheduler selection to UI only.
+           If you want to change the backend scheduler from frontend, you'd need to
+           add a command endpoint or use files/sockets to communicate; this is left
+           intentionally simple for PBL. */
+        function setScheduler(name) {
+            currentScheduler = name;
+            schedLabel.textContent = name;
+            // Visual hint: brief pulse
+            document.querySelectorAll('.btn').forEach(b => b.style.transform = 'scale(0.98)');
+            setTimeout(() => document.querySelectorAll('.btn').forEach(b => b.style.transform = ''), 120);
+        }
+
+        /* Reset (visual) */
+        function resetMetrics() {
+            // instruct user how to reset backend metrics
+            alert('To reset metrics, stop and restart the backend or use its reset option (if added).');
+        }
+
+        /* Download last snapshot */
+        function downloadJSON() {
+            if (!lastSnapshot) {
+                alert('No snapshot yet (run backend)');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastSnapshot, null, 2));
+            const a = document.createElement('a');
+            a.href = dataStr;
+            a.download = 'traffic_snapshot.json';
+            a.click();
+        }
+
+        function openBackendHelp() {
+            alert('Run the backend (C program) in the sibling backend folder:\n\n./traffic_controller [scheduler] [tick_ms]\n\ne.g. ./traffic_controller dynamic 500\n\nMake sure backend writes to ../data/traffic_data.json (relative to frontend).');
+        }
+
+        /* Poll snapshots every 700ms */
+        setInterval(fetchSnapshot, 700);
+        fetchSnapshot();
+    </script>
+</body>
+
+</html>
