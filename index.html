@@ -1,380 +1,806 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SMART TRAFFIC SIGNAL CONTROLLER</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <title>Intelligent Traffic Controller — Neon Dark</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
     <style>
          :root {
-            --bg1: #0f1724;
-            --bg2: #0b1221;
-            --card: #0f1728;
-            --accent: #63f5b0;
-            --accent2: #6ec0ff;
-            --muted: #b8c2d3;
+            --bg-1: #020617;
+            --bg-2: #061025;
+            --card: rgba(255, 255, 255, 0.03);
+            --glass: rgba(255, 255, 255, 0.04);
+            --muted: #98a0b3;
+            --text: #e6eef8;
+            --accent-a: #00f5a0;
+            /* neon green */
+            --accent-b: #7c5cff;
+            /* neon purple */
+            --accent-c: #00e0ff;
+            /* cyan */
+            --danger: #ff6b6b;
+            --gold: #ffcc66;
         }
         
-        * {
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif
+        html,
+        body {
+            height: 100%
         }
         
         body {
+            font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
             margin: 0;
-            background: linear-gradient(135deg, var(--bg1), var(--bg2));
-            color: #e6eef8
+            padding: 28px;
+            color: var(--text);
+            background: radial-gradient(1000px 400px at 10% 10%, rgba(124, 92, 255, 0.07), transparent 10%), radial-gradient(900px 400px at 90% 90%, rgba(0, 240, 255, 0.04), transparent 10%), linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* glass cards */
+        
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(6px) saturate(120%);
+            box-shadow: 0 8px 30px rgba(2, 6, 23, 0.6);
+            transition: transform .22s ease, box-shadow .22s ease;
         }
         
-        header {
-            padding: 22px 36px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 50px rgba(2, 6, 23, 0.75);
         }
+        /* headings */
         
         h1 {
-            margin: 0;
-            font-weight: 700;
-            font-size: 20px;
-            color: var(--accent2)
+            letter-spacing: -0.02em;
         }
         
-        .sub {
+        .subtitle {
             color: var(--muted);
-            font-size: 13px
+        }
+        /* traffic lights neon */
+        
+        .traffic-light {
+            transition: all .18s ease-in-out;
+            width: 64px;
+            height: 64px;
         }
         
-        main {
-            padding: 20px 36px;
-            display: grid;
-            grid-template-columns: 1fr 360px;
-            gap: 24px
+        .light-off {
+            background: #111827;
+            box-shadow: none;
+            border: 2px solid rgba(255, 255, 255, 0.03);
         }
         
-        .board {
-            background: linear-gradient(180deg, #09121a22, #07111a66);
-            border-radius: 12px;
-            padding: 18px;
-            min-height: 520px;
+        .red-on {
+            background: linear-gradient(180deg, #ff6b6b, #ff3b3b);
+            box-shadow: 0 8px 36px rgba(255, 75, 75, 0.35), inset 0 -3px 12px rgba(255, 150, 150, 0.08);
+            border: 1px solid rgba(255, 80, 80, 0.6);
         }
         
-        .lanes {
-            display: flex;
-            gap: 18px;
-            justify-content: center;
-            align-items: flex-end;
-            height: 360px
+        .yellow-on {
+            background: linear-gradient(180deg, #ffd66b, #ffb84d);
+            box-shadow: 0 8px 36px rgba(255, 190, 90, 0.28);
+            border: 1px solid rgba(255, 190, 80, 0.5);
         }
         
-        .lane {
-            width: 150px;
-            height: 320px;
-            background: #0b2330;
-            border-radius: 12px;
-            padding: 12px;
-            position: relative;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        .green-on {
+            background: linear-gradient(180deg, #7effc7, #00f5a0);
+            box-shadow: 0 10px 44px rgba(0, 245, 160, 0.28);
+            border: 1px solid rgba(0, 200, 140, 0.45);
         }
+        /* neon status pill */
         
-        .lane.active {
-            box-shadow: 0 12px 40px rgba(99, 245, 176, 0.12), 0 0 0 4px rgba(99, 245, 176, 0.08)
-        }
-        
-        .lane .title {
+        .status-pill {
+            padding: .5rem 1rem;
+            border-radius: 999px;
             font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: var(--accent)
+            background: linear-gradient(90deg, rgba(0, 0, 0, 0.25), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 28px rgba(0, 0, 0, 0.2) inset;
         }
         
-        .queue {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: 14px;
-            display: flex;
-            flex-direction: column-reverse;
-            gap: 6px;
-            align-items: center
+        .status-running {
+            background: linear-gradient(90deg, rgba(0, 245, 160, 0.12), rgba(124, 92, 255, 0.08));
+            box-shadow: 0 6px 28px rgba(124, 92, 255, 0.08), 0 0 22px rgba(0, 245, 160, 0.08);
+            color: #00110a;
         }
+        /* buttons */
+        
+        .btn-primary {
+            background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+            color: #021010;
+            padding: .6rem 1rem;
+            border-radius: .75rem;
+            font-weight: 700;
+            box-shadow: 0 10px 30px rgba(76, 40, 255, 0.12);
+            transition: transform .15s ease, filter .15s ease;
+            border: 0;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.06);
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: .5rem .9rem;
+            border-radius: .6rem;
+            transition: background .12s ease, transform .12s ease;
+        }
+        
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.02);
+            transform: translateY(-3px);
+        }
+        /* input dark */
+        
+        .input-dark {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            padding: .5rem;
+            border-radius: .5rem;
+        }
+        /* chart styling override */
+        
+        .chart-card {
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.02));
+            border-radius: 10px;
+            padding: 8px;
+        }
+        /* car */
         
         .car {
-            width: 42px;
+            width: 36px;
             height: 22px;
             border-radius: 6px;
-            background: #ff7b7b;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+            background: linear-gradient(180deg, #0f1724, #111827);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
         }
+        /* subtle floating header accent */
         
-        .car.bus {
-            width: 60px;
-            height: 26px;
-            border-radius: 8px;
-            background: #ffd27a
+        .accent-strip {
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-c), var(--accent-b));
+            box-shadow: 0 8px 40px rgba(124, 92, 255, 0.08);
         }
+        /* log item */
         
-        .statbar {
-            margin-top: 12px;
+        .log-item {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
             font-size: 13px;
-            color: var(--muted)
-        }
-        
-        .metrics {
-            background: linear-gradient(180deg, #07111a66, #07111a33);
-            padding: 16px;
-            border-radius: 12px
-        }
-        
-        .metric {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 4px;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.03)
-        }
-        
-        .gantt {
-            height: 70px;
-            margin-top: 12px;
-            background: #061018;
-            border-radius: 8px;
-            padding: 6px;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            overflow: hidden
-        }
-        
-        .gcell {
-            width: 6px;
-            height: 54px;
-            border-radius: 2px;
-            opacity: 0.95
-        }
-        
-        footer.controls {
-            padding: 12px 36px;
             color: var(--muted);
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            justify-content: space-between
+            padding: 6px;
+            border-radius: 6px;
         }
+        /* responsive tweaks */
         
-        .btn {
-            background: linear-gradient(90deg, #1b2b3a, #12202a);
-            border: 1px solid rgba(255, 255, 255, 0.02);
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--muted)
-        }
-        
-        .btn.primary {
-            background: linear-gradient(90deg, var(--accent), var(--accent2));
-            color: #07111a;
-            font-weight: 600
-        }
-        
-        .small {
-            font-size: 12px
+        @media (max-width: 900px) {
+            .grid-sm {
+                grid-template-columns: 1fr !important;
+            }
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <div>
-            <h1>SMART TRAFFIC SIGNAL CONTROLLER</h1>
-            <div class="sub">OS-scheduling driven intersection — RR / Static / Dynamic (aging) / Hybrid</div>
-        </div>
-        <div class="sub small">Tick: <span id="tick">0</span> &nbsp; | &nbsp; Scheduler: <strong id="schedLabel">dynamic</strong></div>
-    </header>
 
-    <main>
-        <section class="board">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:600">Intersection View</div>
-                <div style="display:flex;gap:8px;align-items:center">
-                    <button class="btn" onclick="setScheduler('rr')">RR</button>
-                    <button class="btn" onclick="setScheduler('static')">Static</button>
-                    <button class="btn" onclick="setScheduler('dynamic')">Dynamic</button>
-                    <button class="btn" onclick="setScheduler('hybrid')">Hybrid</button>
-                    <button class="btn primary" onclick="resetMetrics()">Reset</button>
-                </div>
+    <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold">Intelligent Traffic Controller</h1>
+                <p class="subtitle text-sm mt-1">Neon dark theme • demand-responsive green durations • manual / emergency controls</p>
+                <div class="mt-3 w-40 accent-strip"></div>
             </div>
 
-            <div class="lanes" id="lanes">
-                <!-- lanes inserted by JS -->
+            <div class="flex gap-3 items-center">
+                <div id="status-pill" class="status-pill">Stopped</div>
+                <button id="start-stop" class="btn-primary">Start</button>
             </div>
+        </header>
 
-            <div style="display:flex;gap:18px;margin-top:14px">
-                <div style="flex:1">
-                    <div class="metrics" id="metrics">
-                        <!-- metrics -->
+        <!-- Controls -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="card p-4 rounded-xl">
+                <h3 class="font-bold mb-2">Simulation</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm w-28 text-muted">Mode</label>
+                        <select id="mode-select" class="input-dark w-full rounded-md">
+              <option value="auto">Automatic</option>
+              <option value="manual">Manual</option>
+            </select>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm w-28 text-muted">Speed</label>
+                        <input id="speed-range" type="range" min="0.25" max="2" step="0.25" value="1" class="w-full" />
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="step-btn" class="btn-ghost">Step</button>
+                        <button id="pause-btn" class="btn-ghost">Pause Tick</button>
+                        <button id="emergency-btn" class="btn-ghost text-red-400 border-red-400">Trigger EV</button>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button id="export-log" class="btn-ghost flex-1">Export Log</button>
+                        <button id="clear-log" class="btn-ghost">Clear Log</button>
                     </div>
                 </div>
-                <div style="width:320px">
-                    <div style="font-weight:600;margin-bottom:8px">Gantt - recent phases</div>
-                    <div class="gantt" id="gantt"></div>
+            </div>
+
+            <div class="card p-4 rounded-xl">
+                <h3 class="font-bold mb-2">Demand & Arrival</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="panel p-3 rounded-lg" style="background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.006)); border:1px solid rgba(255,255,255,0.03)">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-sm text-muted">North-South</div>
+                                <div id="ns-count" class="text-2xl font-extrabold text-white mt-1">0 cars</div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <button id="ns-add" class="btn-primary text-sm px-3 py-1">+3</button>
+                                <button id="ns-clear" class="btn-ghost text-sm">Clear</button>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="text-xs text-muted">Arrival prob (sec)</label>
+                            <input id="ns-rate" type="range" min="0" max="1" step="0.05" value="0.45" class="w-full mt-2" />
+                            <div class="text-xs text-muted mt-1">Current: <span id="ns-rate-display">0.45</span></div>
+                        </div>
+                    </div>
+
+                    <div class="panel p-3 rounded-lg" style="background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.006)); border:1px solid rgba(255,255,255,0.03)">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-sm text-muted">East-West</div>
+                                <div id="ew-count" class="text-2xl font-extrabold text-white mt-1">0 cars</div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <button id="ew-add" class="btn-primary text-sm px-3 py-1">+3</button>
+                                <button id="ew-clear" class="btn-ghost text-sm">Clear</button>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="text-xs text-muted">Arrival prob (sec)</label>
+                            <input id="ew-rate" type="range" min="0" max="1" step="0.05" value="0.3" class="w-full mt-2" />
+                            <div class="text-xs text-muted mt-1">Current: <span id="ew-rate-display">0.30</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4 rounded-xl chart-card">
+                <h3 class="font-bold mb-2">Analytics</h3>
+                <div class="h-40">
+                    <canvas id="queueChart" class="w-full h-full"></canvas>
+                </div>
+                <div class="mt-3 text-xs text-muted">
+                    <div>NS Green time: <span id="ns-duration">--</span> s</div>
+                    <div>EW Green time: <span id="ew-duration">--</span> s</div>
                 </div>
             </div>
         </section>
 
-        <aside style="padding:12px">
-            <div style="background:linear-gradient(180deg,#07111a,#07111a22);padding:14px;border-radius:12px">
-                <div style="font-weight:700;margin-bottom:8px">Controls & Info</div>
-                <div class="small" style="color:var(--muted);margin-bottom:10px">
-                    Frontend reads snapshots produced by the C backend at <code>../data/traffic_data.json</code>.
-                </div>
-                <div style="display:flex;gap:8px;margin-bottom:8px">
-                    <div class="btn" onclick="downloadJSON()">Download snapshot</div>
-                    <div class="btn" onclick="openBackendHelp()">How to run backend</div>
+        <!-- Intersection Visual -->
+        <section class="card p-6 rounded-xl relative overflow-visible">
+            <h3 class="font-bold mb-4 text-soft">Intersection</h3>
+
+            <div class="grid intersection-grid grid-cols-3 gap-6 items-center">
+                <div class="flex flex-col items-center space-y-3">
+                    <div class="text-sm text-muted">North Approach</div>
+                    <div class="lane-anim w-44 h-12 relative" id="lane-N-top"></div>
                 </div>
 
-                <div style="margin-top:12px">
-                    <div style="font-weight:600;margin-bottom:6px">Legend</div>
-                    <div class="small" style="color:var(--muted)">
-                        <div>Green border = current green phase</div>
-                        <div>Car blocks = vehicles in queue (count limited)</div>
+                <div class="flex flex-col items-center p-4">
+                    <div class="relative w-84 h-56 rounded-xl flex items-center justify-center" style="background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.03);">
+                        <div class="flex flex-col items-center absolute left-4 top-6">
+                            <div class="traffic-light light-off rounded-full" id="ns-red"></div>
+                            <div class="traffic-light light-off rounded-full mt-2" id="ns-yellow"></div>
+                            <div class="traffic-light light-off rounded-full mt-2" id="ns-green"></div>
+                        </div>
+
+                        <div class="flex flex-col items-center absolute right-4 top-6 rotate-90">
+                            <div class="traffic-light light-off rounded-full" id="ew-red"></div>
+                            <div class="traffic-light light-off rounded-full mt-2" id="ew-yellow"></div>
+                            <div class="traffic-light light-off rounded-full mt-2" id="ew-green"></div>
+                        </div>
+
+                        <div class="w-52 h-36 bg-black/20 rounded-lg border border-white/4 flex items-center justify-center">
+                            <div class="text-sm text-muted">Intersection</div>
+                        </div>
                     </div>
                 </div>
+
+                <div class="flex flex-col items-center space-y-3">
+                    <div class="text-sm text-muted">East Approach</div>
+                    <div class="lane-anim w-44 h-12 relative" id="lane-E-right"></div>
+                </div>
+
+                <div class="flex flex-col items-center space-y-3 col-span-3 lg:col-span-1 lg:col-start-1 lg:col-end-2">
+                    <div class="text-sm text-muted">South Approach</div>
+                    <div class="lane-anim w-44 h-12 relative" id="lane-S-bottom"></div>
+                </div>
+
+                <div class="col-span-1"></div>
+
+                <div class="flex flex-col items-center space-y-3 col-span-1 lg:col-start-3 lg:col-end-4">
+                    <div class="text-sm text-muted">West Approach</div>
+                    <div class="lane-anim w-44 h-12 relative" id="lane-W-left"></div>
+                </div>
             </div>
-        </aside>
-    </main>
+        </section>
 
-    <footer class="controls">
-        <div class="small">Pro tip: run backend with <code>./traffic_controller dynamic 400</code> to change scheduler & tick</div>
-        <div><span class="small">Author: PBL simulator</span></div>
-    </footer>
+        <!-- Event Log & Scenarios -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="col-span-2 card p-4 rounded-xl">
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-soft">Event Log</h3>
+                    <div class="text-xs text-muted">Recent events</div>
+                </div>
+                <div id="log" class="mt-3 h-48 overflow-auto space-y-2 p-2" style="border-top:1px solid rgba(255,255,255,0.02)"></div>
+            </div>
 
+            <div class="card p-4 rounded-xl">
+                <h3 class="font-bold text-soft">Scenarios</h3>
+                <div class="mt-2 space-y-2">
+                    <input id="scenario-name" placeholder="Scenario name" class="w-full px-3 py-2 rounded-md input-dark" />
+                    <div class="flex gap-2 mt-2">
+                        <button id="save-scenario" class="btn-primary flex-1">Save</button>
+                        <button id="load-scenario" class="btn-ghost flex-1">Load</button>
+                    </div>
+                    <div class="text-xs text-muted mt-2">Saved to localStorage</div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- SCRIPT: Simulation & UI logic (unchanged) -->
     <script>
-        const lanesDiv = document.getElementById('lanes');
-        const tickSpan = document.getElementById('tick');
-        const schedLabel = document.getElementById('schedLabel');
-        const ganttDiv = document.getElementById('gantt');
-        const metricsDiv = document.getElementById('metrics');
+        /* --------------- Configuration & state --------------- */
+        const MIN_GREEN = 10; // minimum green seconds
+        const MAX_GREEN = 45; // maximum green seconds
+        const YELLOW = 4; // yellow seconds
+        const DEMAND_UNIT = 3; // add 3 per click
+        const DEMAND_CLEAR_RATE = 1; // cars cleared per second while green (base)
+        const CLEAR_BONUS_PER_SPEED = 1.5; // how speed multiplier increases clearing
 
-        let lastSnapshot = null;
-        let currentScheduler = 'dynamic';
+        // DOM references
+        const startStop = document.getElementById('start-stop');
+        const statusPill = document.getElementById('status-pill');
+        const nsCountEl = document.getElementById('ns-count');
+        const ewCountEl = document.getElementById('ew-count');
+        const nsAdd = document.getElementById('ns-add');
+        const ewAdd = document.getElementById('ew-add');
+        const nsClear = document.getElementById('ns-clear');
+        const ewClear = document.getElementById('ew-clear');
+        const nsRate = document.getElementById('ns-rate');
+        const ewRate = document.getElementById('ew-rate');
+        const nsRateDisplay = document.getElementById('ns-rate-display');
+        const ewRateDisplay = document.getElementById('ew-rate-display');
+        const nsRed = document.getElementById('ns-red');
+        const nsYellow = document.getElementById('ns-yellow');
+        const nsGreen = document.getElementById('ns-green');
+        const ewRed = document.getElementById('ew-red');
+        const ewYellow = document.getElementById('ew-yellow');
+        const ewGreen = document.getElementById('ew-green');
+        const nsDurationEl = document.getElementById('ns-duration');
+        const ewDurationEl = document.getElementById('ew-duration');
+        const queueChartCtx = document.getElementById('queueChart').getContext('2d');
+        const speedRange = document.getElementById('speed-range');
+        const modeSelect = document.getElementById('mode-select');
+        const stepBtn = document.getElementById('step-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const emergencyBtn = document.getElementById('emergency-btn');
+        const logEl = document.getElementById('log');
+        const exportLogBtn = document.getElementById('export-log');
+        const clearLogBtn = document.getElementById('clear-log');
+        const saveScenarioBtn = document.getElementById('save-scenario');
+        const loadScenarioBtn = document.getElementById('load-scenario');
+        const scenarioNameInput = document.getElementById('scenario-name');
 
-        function createLane(i) {
-            const l = document.createElement('div');
-            l.className = 'lane';
-            l.id = 'lane' + i;
-            l.innerHTML = `<div class="title">Approach ${i+1}</div>
-                 <div class="sub small statbar" id="info${i}">Q:0 | P: -</div>
-                 <div class="queue" id="queue${i}"></div>`;
-            return l;
-        }
+        const laneTop = document.getElementById('lane-N-top');
+        const laneRight = document.getElementById('lane-E-right');
+        const laneBottom = document.getElementById('lane-S-bottom');
+        const laneLeft = document.getElementById('lane-W-left');
 
-        /* create 4 lanes */
-        for (let i = 0; i < 4; i++) lanesDiv.appendChild(createLane(i));
+        // state
+        let nsQueue = 0,
+            ewQueue = 0;
+        let nsArrival = parseFloat(nsRate.value),
+            ewArrival = parseFloat(ewRate.value);
+        let running = false;
+        let tickInterval = null;
+        let tickSeconds = 1; // real-time tick length in ms base (adjustable by speed)
+        let simSpeed = 1; // multiplier from speed slider
+        let currentPhase = 'NS_GREEN'; // NS_GREEN, NS_YELLOW, EW_GREEN, EW_YELLOW
+        let phaseTimer = 0; // seconds elapsed in current phase
+        let nsGreenDuration = MIN_GREEN,
+            ewGreenDuration = MIN_GREEN;
+        let eventLog = [];
+        let emergencyActive = false;
+        let pausedTick = false;
 
-        async function fetchSnapshot() {
-            try {
-                const res = await fetch('../data/traffic_data.json?nocache=' + Math.random());
-                if (!res.ok) throw new Error('no snapshot');
-                const json = await res.json();
-                lastSnapshot = json;
-                renderSnapshot(json);
-            } catch (e) {
-                // offline or file not present
-                // console.log('waiting for backend...');
-            }
-        }
-
-        function renderSnapshot(s) {
-            tickSpan.textContent = s.tick;
-            schedLabel.textContent = currentScheduler;
-            // Approaches
-            s.approaches.forEach(a => {
-                const lane = document.getElementById('lane' + a.id);
-                const queueDiv = document.getElementById('queue' + a.id);
-                const info = document.getElementById('info' + a.id);
-                // active highlight
-                if (s.current_green === a.id) lane.classList.add('active');
-                else lane.classList.remove('active');
-                // fill queue with car elements (cap visuals to 10)
-                queueDiv.innerHTML = '';
-                const count = Math.min(12, a.queue_len);
-                for (let i = 0; i < count; i++) {
-                    const el = document.createElement('div');
-                    el.className = 'car ' + ((i % 7 === 0) ? 'bus' : '');
-                    el.style.transform = 'translateY(' + (-(i * 4)) + 'px)';
-                    queueDiv.appendChild(el);
+        // Chart
+        const queueChart = new Chart(queueChartCtx, {
+            type: 'bar',
+            data: {
+                labels: ['NS', 'EW'],
+                datasets: [{
+                    label: 'Queue length',
+                    data: [0, 0],
+                    backgroundColor: ['#00f5a0', '#00e0ff'],
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                animation: {
+                    duration: 250
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 10,
+                        ticks: {
+                            color: '#9fb1c9'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#9fb1c9'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 }
-                info.textContent = `Q:${a.queue_len} | P:${a.static_prio} | Age:${a.age}`;
+            }
+        });
+
+        /* --------------- Helpers --------------- */
+        function logEvent(text, level = 'info') {
+            const t = new Date().toLocaleTimeString();
+            const item = document.createElement('div');
+            item.className = 'log-item ' + (level === 'error' ? 'text-red-300' : 'text-muted');
+            item.textContent = `[${t}] ${text}`;
+            logEl.prepend(item);
+            eventLog.unshift({
+                time: new Date().toISOString(),
+                text
             });
-            // metrics
-            let total_served = 0,
-                total_wait = 0,
-                qtotal = 0,
-                total_starv = 0;
-            s.approaches.forEach(a => {
-                total_served += a.served;
-                total_wait += a.dynamic_prio;
-                qtotal += a.queue_len;
-                total_starv += a.starvation || 0;
-            });
-            metricsDiv.innerHTML = `
-    <div class="metric"><div>Throughput</div><div>${total_served}</div></div>
-    <div class="metric"><div>Queue total</div><div>${qtotal}</div></div>
-    <div class="metric"><div>Avg dyn-prio (proxy)</div><div>${(total_wait/4).toFixed(2)}</div></div>
-    <div class="metric"><div>Starvation events</div><div>${total_starv}</div></div>
-  `;
-            // gantt
-            ganttDiv.innerHTML = '';
-            if (s.gantt && s.gantt.length > 0) {
-                const colors = ['#63f5b0', '#6ec0ff', '#ffd27a', '#ff9aa2'];
-                s.gantt.forEach(v => {
-                    const c = document.createElement('div');
-                    c.className = 'gcell';
-                    c.style.background = (v === -1 ? '#081018' : colors[(v % colors.length)]);
-                    ganttDiv.appendChild(c);
-                });
+            if (logEl.children.length > 300) logEl.removeChild(logEl.lastChild);
+        }
+
+        function updateUI() {
+            nsCountEl.textContent = `${nsQueue} cars`;
+            ewCountEl.textContent = `${ewQueue} cars`;
+            nsRateDisplay.textContent = nsArrival.toFixed(2);
+            ewRateDisplay.textContent = ewArrival.toFixed(2);
+
+            nsDurationEl.textContent = nsGreenDuration.toFixed(1);
+            ewDurationEl.textContent = ewGreenDuration.toFixed(1);
+
+            queueChart.data.datasets[0].data = [nsQueue, ewQueue];
+            queueChart.update();
+
+            // lights
+            resetLights();
+            if (currentPhase === 'NS_GREEN') {
+                nsGreen.classList.add('green-on', 'active-pulse');
+                ewRed.classList.add('red-on');
+            } else if (currentPhase === 'NS_YELLOW') {
+                nsYellow.classList.add('yellow-on');
+                ewRed.classList.add('red-on');
+            } else if (currentPhase === 'EW_GREEN') {
+                ewGreen.classList.add('green-on', 'active-pulse');
+                nsRed.classList.add('red-on');
+            } else if (currentPhase === 'EW_YELLOW') {
+                ewYellow.classList.add('yellow-on');
+                nsRed.classList.add('red-on');
+            }
+
+            // status pill
+            statusPill.textContent = running ? `${modeSelect.value.toUpperCase()} • ${currentPhase.replace('_',' ')}` : 'Stopped';
+            if (running) {
+                statusPill.classList.add('status-running');
+            } else {
+                statusPill.classList.remove('status-running');
             }
         }
 
-        /* Buttons (visual only) - sends scheduler selection to UI only.
-           If you want to change the backend scheduler from frontend, you'd need to
-           add a command endpoint or use files/sockets to communicate; this is left
-           intentionally simple for PBL. */
-        function setScheduler(name) {
-            currentScheduler = name;
-            schedLabel.textContent = name;
-            // Visual hint: brief pulse
-            document.querySelectorAll('.btn').forEach(b => b.style.transform = 'scale(0.98)');
-            setTimeout(() => document.querySelectorAll('.btn').forEach(b => b.style.transform = ''), 120);
+        function resetLights() {
+            [nsRed, nsYellow, nsGreen, ewRed, ewYellow, ewGreen].forEach(el => {
+                el.className = 'traffic-light light-off rounded-full';
+            });
         }
 
-        /* Reset (visual) */
-        function resetMetrics() {
-            // instruct user how to reset backend metrics
-            alert('To reset metrics, stop and restart the backend or use its reset option (if added).');
+        function calcGreenTime(demand) {
+            const base = MIN_GREEN;
+            const extra = demand * 1.2; // seconds per car
+            return Math.min(MAX_GREEN, Math.max(MIN_GREEN, base + extra));
         }
 
-        /* Download last snapshot */
-        function downloadJSON() {
-            if (!lastSnapshot) {
-                alert('No snapshot yet (run backend)');
+        function spawnCar(laneEl) {
+            const car = document.createElement('div');
+            car.className = 'car';
+            car.textContent = '🚗';
+            car.style.left = '-48px';
+            car.style.top = Math.random() * 18 + 'px';
+            laneEl.appendChild(car);
+            const duration = 1100 / simSpeed;
+            const start = performance.now();
+
+            function animate(now) {
+                const t = (now - start) / duration;
+                if (t >= 1) {
+                    if (car.parentElement) car.parentElement.removeChild(car);
+                    return;
+                }
+                const x = t * (laneEl.clientWidth + 96) - 48;
+                car.style.transform = `translateX(${x}px)`;
+                requestAnimationFrame(animate);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        /* --------------- Simulation Tick --------------- */
+        function simTick() {
+            if (!running || pausedTick) return;
+
+            if (Math.random() < nsArrival) {
+                nsQueue += 1;
+                logEvent('Vehicle arrived at NS');
+                spawnCar(laneTop);
+            }
+            if (Math.random() < ewArrival) {
+                ewQueue += 1;
+                logEvent('Vehicle arrived at EW');
+                spawnCar(laneRight);
+            }
+
+            if (emergencyActive) {
+                currentPhase = 'NS_GREEN';
+                phaseTimer = 0;
+                nsGreenDuration = Math.max(MIN_GREEN, 8);
+                logEvent('Emergency preemption: NS green', 'error');
+                emergencyActive = false;
+            }
+
+            let clearRate = DEMAND_CLEAR_RATE * (1 + (simSpeed - 1) * CLEAR_BONUS_PER_SPEED);
+            if (currentPhase === 'NS_GREEN') {
+                const cleared = Math.min(nsQueue, Math.max(1, Math.round(clearRate)));
+                nsQueue -= cleared;
+                for (let i = 0; i < cleared; i++) spawnCar(laneBottom);
+            } else if (currentPhase === 'EW_GREEN') {
+                const cleared = Math.min(ewQueue, Math.max(1, Math.round(clearRate)));
+                ewQueue -= cleared;
+                for (let i = 0; i < cleared; i++) spawnCar(laneLeft);
+            }
+
+            phaseTimer++;
+
+            if (phaseTimer === 1 && modeSelect.value === 'auto') {
+                nsGreenDuration = calcGreenTime(nsQueue);
+                ewGreenDuration = calcGreenTime(ewQueue);
+            }
+
+            let phaseDuration = currentPhase.includes('NS') ? (currentPhase.includes('GREEN') ? nsGreenDuration : YELLOW) :
+                (currentPhase.includes('GREEN') ? ewGreenDuration : YELLOW);
+
+            if (currentPhase.endsWith('GREEN')) {
+                const minReached = phaseTimer >= MIN_GREEN;
+                const maxReached = phaseTimer >= phaseDuration;
+                const demandCleared = (currentPhase === 'NS_GREEN' ? nsQueue : ewQueue) === 0;
+
+                if (maxReached || (minReached && demandCleared && modeSelect.value === 'auto')) {
+                    currentPhase = currentPhase.startsWith('NS') ? 'NS_YELLOW' : 'EW_YELLOW';
+                    phaseTimer = 0;
+                    logEvent(`${currentPhase.replace('_',' ')} starting`);
+                }
+            } else if (currentPhase.endsWith('YELLOW')) {
+                if (phaseTimer >= YELLOW) {
+                    currentPhase = currentPhase.startsWith('NS') ? 'EW_GREEN' : 'NS_GREEN';
+                    phaseTimer = 0;
+                    if (modeSelect.value === 'auto') {
+                        nsGreenDuration = calcGreenTime(nsQueue);
+                        ewGreenDuration = calcGreenTime(ewQueue);
+                    }
+                    logEvent(`Switched to ${currentPhase.replace('_',' ')}`);
+                }
+            }
+
+            updateUI();
+        }
+
+        /* --------------- Controls wiring --------------- */
+        startStop.addEventListener('click', () => {
+            if (!running) {
+                running = true;
+                startStop.textContent = 'Stop';
+                startStop.style.boxShadow = '0 14px 40px rgba(124,92,255,0.12)';
+                logEvent('Simulation started');
+                tickInterval = setInterval(() => {
+                    simTick();
+                }, 1000 / simSpeed);
+            } else {
+                running = false;
+                startStop.textContent = 'Start';
+                if (tickInterval) clearInterval(tickInterval);
+                logEvent('Simulation stopped');
+            }
+            updateUI();
+        });
+
+        speedRange.addEventListener('input', (e) => {
+            simSpeed = parseFloat(e.target.value);
+            if (tickInterval) {
+                clearInterval(tickInterval);
+                tickInterval = setInterval(() => simTick(), 1000 / simSpeed);
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            pausedTick = !pausedTick;
+            pauseBtn.textContent = pausedTick ? 'Resume Tick' : 'Pause Tick';
+            logEvent(pausedTick ? 'Tick paused' : 'Tick resumed');
+        });
+
+        stepBtn.addEventListener('click', () => {
+            simTick();
+            logEvent('Manual step executed');
+        });
+
+        nsAdd.addEventListener('click', () => {
+            nsQueue += DEMAND_UNIT;
+            logEvent(`NS manual add +${DEMAND_UNIT}`);
+            updateUI();
+        });
+        ewAdd.addEventListener('click', () => {
+            ewQueue += DEMAND_UNIT;
+            logEvent(`EW manual add +${DEMAND_UNIT}`);
+            updateUI();
+        });
+        nsClear.addEventListener('click', () => {
+            nsQueue = 0;
+            logEvent('NS queue cleared');
+            updateUI();
+        });
+        ewClear.addEventListener('click', () => {
+            ewQueue = 0;
+            logEvent('EW queue cleared');
+            updateUI();
+        });
+
+        nsRate.addEventListener('input', (e) => {
+            nsArrival = parseFloat(e.target.value);
+            nsRateDisplay.textContent = nsArrival.toFixed(2);
+        });
+        ewRate.addEventListener('input', (e) => {
+            ewArrival = parseFloat(e.target.value);
+            ewRateDisplay.textContent = ewArrival.toFixed(2);
+        });
+
+        emergencyBtn.addEventListener('click', () => {
+            emergencyActive = true;
+            logEvent('Emergency vehicle triggered — preempt next cycle', 'error');
+        });
+
+        exportLogBtn.addEventListener('click', () => {
+            if (eventLog.length === 0) {
+                alert('No events to export');
                 return;
             }
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastSnapshot, null, 2));
+            const lines = ['time,text'];
+            eventLog.forEach(r => lines.push(`${r.time.replace(/,/g,'')},${JSON.stringify(r.text).replace(/,/g,';')}`));
+            const blob = new Blob([lines.join('\n')], {
+                type: 'text/csv'
+            });
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = dataStr;
-            a.download = 'traffic_snapshot.json';
+            a.href = url;
+            a.download = 'traffic_sim_log.csv';
             a.click();
-        }
+            URL.revokeObjectURL(url);
+            logEvent('Exported event log (CSV)');
+        });
 
-        function openBackendHelp() {
-            alert('Run the backend (C program) in the sibling backend folder:\n\n./traffic_controller [scheduler] [tick_ms]\n\ne.g. ./traffic_controller dynamic 500\n\nMake sure backend writes to ../data/traffic_data.json (relative to frontend).');
-        }
+        clearLogBtn.addEventListener('click', () => {
+            eventLog = [];
+            logEl.innerHTML = '';
+            logEvent('Cleared event log');
+        });
 
-        /* Poll snapshots every 700ms */
-        setInterval(fetchSnapshot, 700);
-        fetchSnapshot();
+        saveScenarioBtn.addEventListener('click', () => {
+            const name = (scenarioNameInput.value || 'scenario').trim();
+            if (!name) return alert('Please enter a scenario name');
+            const sc = {
+                nsQueue,
+                ewQueue,
+                nsArrival,
+                ewArrival,
+                nsGreenDuration,
+                ewGreenDuration,
+                mode: modeSelect.value
+            };
+            localStorage.setItem('scenario_' + name, JSON.stringify(sc));
+            logEvent(`Scenario "${name}" saved`);
+        });
+
+        loadScenarioBtn.addEventListener('click', () => {
+            const name = (scenarioNameInput.value || 'scenario').trim();
+            const raw = localStorage.getItem('scenario_' + name);
+            if (!raw) return alert('No scenario found with that name');
+            const sc = JSON.parse(raw);
+            nsQueue = sc.nsQueue || 0;
+            ewQueue = sc.ewQueue || 0;
+            nsArrival = sc.nsArrival || parseFloat(nsRate.value);
+            ewArrival = sc.ewArrival || parseFloat(ewRate.value);
+            nsGreenDuration = sc.nsGreenDuration || MIN_GREEN;
+            ewGreenDuration = sc.ewGreenDuration || MIN_GREEN;
+            modeSelect.value = sc.mode || 'auto';
+            nsRate.value = nsArrival;
+            ewRate.value = ewArrival;
+            nsRateDisplay.textContent = nsArrival.toFixed(2);
+            ewRateDisplay.textContent = ewArrival.toFixed(2);
+            logEvent(`Scenario "${name}" loaded`);
+            updateUI();
+        });
+
+        /* --------------- Initialization --------------- */
+        nsQueue = 5;
+        ewQueue = 2;
+        nsArrival = parseFloat(nsRate.value);
+        ewArrival = parseFloat(ewRate.value);
+        nsGreenDuration = calcGreenTime(nsQueue);
+        ewGreenDuration = calcGreenTime(ewQueue);
+        nsRateDisplay.textContent = nsArrival.toFixed(2);
+        ewRateDisplay.textContent = ewArrival.toFixed(2);
+        updateUI();
+        logEvent('UI initialized');
+
+        setInterval(() => {
+            const maxQueue = Math.max(nsQueue, ewQueue, 5);
+            queueChart.options.scales.y.suggestedMax = Math.max(10, Math.ceil(maxQueue * 1.5));
+            queueChart.update();
+        }, 2000);
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                startStop.click();
+                e.preventDefault();
+            }
+            if (e.key.toLowerCase() === 'e') {
+                emergencyBtn.click();
+            }
+        });
     </script>
 </body>
 
